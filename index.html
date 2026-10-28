@@ -564,8 +564,10 @@
     if (SERVIDOR) {
       try { const r = await fetch("api/config", { cache: "no-store" }); if (r.ok) return r.json(); } catch {}
     }
-    try { const local = localStorage.getItem("menu-config"); if (local) return JSON.parse(local); } catch {}
-    return window.MENU_CONFIG || {};
+    // Sin servidor (USB): lo más reciente entre config.js y lo guardado desde el panel en este navegador
+    let local = null; try { local = JSON.parse(localStorage.getItem("menu-config")); } catch {}
+    const archivo = window.MENU_CONFIG || {};
+    return local && (local.actualizado || 0) > (archivo.actualizado || 0) ? local : archivo;
   }
 
   // Vista previa dentro del panel de ajustes: recibe la configuración sin guardar

@@ -6,6 +6,15 @@
 
 Se abre el menú en pantalla completa en Chrome. Para salir: `Cmd+Q` (Mac) o `Alt+F4` (Windows).
 
+Si la computadora no tiene Node.js, el lanzador avisa y abre el menú en **modo USB**.
+
+## Modo USB (sin instalar nada)
+1. En tu computadora abre `config.html`, haz tus cambios y presiona **Guardar y descargar**.
+2. Copia el `config.js` descargado a esta carpeta (en la USB), reemplazando el anterior.
+3. En la pantalla abre `index.html` con el navegador (Chrome o Edge).
+
+Las fotos que subes en modo USB quedan dentro de `config.js`, así que funcionan sin internet.
+
 ## Configurar
 Abre **http://localhost:8090/config** en la misma computadora.
 Desde el celular, usa la dirección que aparece en *Ajustes → Acceso y respaldo*
@@ -28,4 +37,4 @@ Mueve el mouse para ver los controles: anterior / pausa / siguiente / Ajustes / 
 - `data/config.json`: tu menú guardado (respáldalo)
 - `uploads/`: fotos subidas desde el panel
 - `config.js`: menú de ejemplo inicial
-- Requiere **Node.js** (https://nodejs.org), sin instalar nada más.
+- Node.js (https://nodejs.org) es opcional: solo hace falta para editar desde el celular y ver los cambios en vivo.

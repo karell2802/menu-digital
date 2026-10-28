@@ -45,6 +45,11 @@ function leerConfig() {
   try { return JSON.parse(fs.readFileSync(ARCHIVO_CONFIG, "utf8")); }
   catch { const c = configInicial(); guardarConfig(c); return c; }
 }
+// Si alguien copió un config.js más nuevo (por ejemplo desde el modo USB), ese gana al arrancar
+(() => {
+  const archivo = configInicial(), guardada = (() => { try { return JSON.parse(fs.readFileSync(ARCHIVO_CONFIG, "utf8")); } catch { return null; } })();
+  if (!guardada || (archivo.actualizado || 0) > (guardada.actualizado || 0)) guardarConfig(archivo);
+})();
 function guardarConfig(c) {
   const tmp = ARCHIVO_CONFIG + ".tmp";
   fs.writeFileSync(tmp, JSON.stringify(c, null, 2));

@@ -312,6 +312,15 @@
   .sacudir { animation: sacudir .4s; }
   @keyframes sacudir { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
 
+  .banner-usb { position: relative; z-index: 2; display: flex; align-items: center; gap: 12px; max-width: 1600px; margin: 16px auto 0; padding: 12px 18px; border-radius: 16px; font-size: 14px; line-height: 1.45; background: color-mix(in srgb, var(--accent-2) 9%, var(--panel)); border: 1px solid color-mix(in srgb, var(--accent-2) 30%, transparent); animation: entrar .5s var(--ease); width: calc(100% - 40px); }
+  .banner-usb[hidden] { display: none; }
+  .banner-usb .e { font-size: 22px; }
+  .banner-usb code, .modal code { font-family: ui-monospace, Menlo, monospace; font-size: 13px; padding: 1px 6px; border-radius: 6px; background: var(--input); }
+  .modal .usb { text-align: left; }
+  .modal .usb h3, .modal .usb p { text-align: center; }
+  .modal ol { display: flex; flex-direction: column; gap: 10px; padding: 16px 16px 16px 36px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); color: var(--muted); }
+  .modal ol b { color: var(--text); }
+
   /* ---------- Responsivo ---------- */
   .solo-movil { display: none; }
   @media (max-width: 1280px) {
@@ -362,14 +371,19 @@
   <div class="logo"><span class="m">🍽️</span><div><b id="tituloNegocio">Menú</b><small>Ajustes de la pantalla</small></div></div>
   <span class="espacio"></span>
   <span class="estado-guardado ocultar-movil" id="estadoGuardado"><i></i><span>Todo guardado</span></span>
-  <a class="btn ocultar-movil" href="./" target="_blank" rel="noopener" title="Abrir la pantalla en otra pestaña">
+  <a class="btn ocultar-movil" href="index.html" target="_blank" rel="noopener" title="Abrir la pantalla en otra pestaña">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Ver pantalla
   </a>
-  <a class="btn icono solo-movil" href="./" target="_blank" rel="noopener" aria-label="Ver pantalla"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></a>
+  <a class="btn icono solo-movil" href="index.html" target="_blank" rel="noopener" aria-label="Ver pantalla"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></a>
   <button class="btn primario ocultar-movil" id="btnGuardar" disabled>
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>Guardar y publicar</span>
   </button>
 </header>
+
+<div class="banner-usb" id="bannerUSB" hidden>
+  <span class="e">💾</span>
+  <div><b>Modo USB · sin servidor.</b> Al guardar se descarga un <code>config.js</code>: cópialo a la carpeta del menú en tu USB, reemplazando el anterior.</div>
+</div>
 
 <div class="app">
   <nav class="nav" id="nav"></nav>
@@ -402,6 +416,20 @@
     <input class="entrada pin-in" id="pinIn" type="password" inputmode="numeric" autocomplete="off" maxlength="8" aria-label="PIN">
     <button class="btn primario" type="submit">Entrar</button>
   </form>
+</div>
+
+<div class="modal" id="modalUSB" hidden>
+  <div class="caja usb">
+    <h3>💾 Ya casi</h3>
+    <p>Se descargó <b>config.js</b> con todo tu menú (fotos incluidas).</p>
+    <ol>
+      <li>Abre tu carpeta de <b>Descargas</b>.</li>
+      <li>Copia <b>config.js</b> a la carpeta <b>menu-digital</b> de la USB.</li>
+      <li>Si te pregunta, elige <b>Reemplazar</b>.</li>
+      <li>Conecta la USB y abre <b>index.html</b> en la pantalla.</li>
+    </ol>
+    <button class="btn primario" id="cerrarUSB">Entendido</button>
+  </div>
 </div>
 
 <input type="file" id="archivo" accept="image/*" hidden>
@@ -710,10 +738,14 @@
       <p style="color:var(--muted);margin-bottom:12px">Si una TV se ve rara, puedes recargarlas todas desde aquí.</p>
       <button class="btn chico" data-acc="recargar">↻ Recargar todas las pantallas</button>
     </div>` : `
-    <div class="aviso">⚠️ <div>Estás abriendo los ajustes sin el servidor, así que los cambios se guardan solo en este navegador. Para editar desde el celular y que la TV se actualice sola, abre <code>iniciar.command</code> (Mac) o <code>iniciar.bat</code> (Windows).</div></div>`}
+    <div class="tarjeta"><h2>Modo USB (sin servidor)</h2>
+      <p style="color:var(--muted);line-height:1.6">Funciona sin instalar nada. Cada vez que guardas se descarga <b style="color:var(--text)">config.js</b> con tu menú y tus fotos. Cópialo a la carpeta del menú en la USB y abre <b style="color:var(--text)">index.html</b> en la pantalla.</p>
+      <div class="aviso" style="margin-top:14px">💡 <div>Para editar desde el celular y que la TV cambie sola, la computadora de la pantalla necesita <a href="https://nodejs.org" target="_blank" rel="noopener" style="color:var(--accent-2)">Node.js</a>. Después abre <code>iniciar.command</code> (Mac) o <code>iniciar.bat</code> (Windows).</div></div>
+    </div>`}
     <div class="tarjeta"><h2>Respaldo</h2>
       <p style="color:var(--muted);margin-bottom:12px">Descarga toda la configuración en un archivo, o restaura uno anterior.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn chico" data-acc="exportar-js">💾 Descargar config.js para USB</button>
         <button class="btn chico" data-acc="exportar">⬇ Descargar respaldo</button>
         <button class="btn chico" data-acc="importar">⬆ Restaurar respaldo</button>
         <button class="btn chico peligro" data-acc="restablecer">Volver al menú de ejemplo</button>
@@ -742,11 +774,12 @@
     if (repintar) pintar();
     if (nav) pintarNav();
     const s = sucio();
-    $("#btnGuardar").disabled = !s;
+    $("#btnGuardar").disabled = SERVIDOR && !s;
     $("#btnGuardar").classList.toggle("sucio", s);
     $("#estadoGuardado").classList.toggle("sucio", s);
     $("#estadoGuardado span").textContent = s ? "Cambios sin publicar" : "Todo guardado";
     $("#barraGuardar").classList.toggle("ver", s);
+    if (!SERVIDOR) $("#estadoGuardado span").textContent = s ? "Cambios sin descargar" : "Modo USB";
     $("#tituloNegocio").textContent = cfg.negocio.nombre || "Menú";
     clearTimeout(tPrevia); tPrevia = setTimeout(enviarPrevia, 120);
   }
@@ -886,6 +919,7 @@
       case "guardar-pin": guardarPin(); break;
       case "recargar": api("api/recargar", { method: "POST" }).then(() => avisar("Pantallas recargadas ✓")); break;
       case "exportar": exportar(); break;
+      case "exportar-js": exportarJS(); avisar("config.js descargado. Cópialo a la USB."); break;
       case "importar": importar(); break;
       case "restablecer":
         if (!confirm("Esto reemplaza tu menú por el de ejemplo (no se publica hasta que guardes). ¿Continuar?")) return;
@@ -919,7 +953,7 @@
     const [ci, pi] = ref.split(".").map(Number), p = cfg.categorias[ci].platillos[pi];
     const zona = $(`[data-soltar="${ref}"]`); zona?.classList.add("subiendo");
     try {
-      const blob = await reducir(f);
+      const blob = await reducir(f, SERVIDOR ? 1400 : 1000); // en modo USB la foto va dentro de config.js
       if (SERVIDOR) {
         const r = await api("api/subir?nombre=" + encodeURIComponent(f.name), { method: "POST", headers: { "Content-Type": blob.type || f.type }, body: blob });
         p.imagen = r.url;
@@ -941,15 +975,29 @@
     return d;
   }
   async function guardar() {
-    if (!sucio()) return;
+    if (SERVIDOR && !sucio()) return;
+    cfg.actualizado = Date.now();
     const datos = clonar(cfg);
     try {
-      if (SERVIDOR) await api("api/config", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(datos) });
-      else localStorage.setItem("menu-config", JSON.stringify(datos));
+      if (SERVIDOR) {
+        await api("api/config", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(datos) });
+        avisar("Publicado en todas las pantallas ✓");
+      } else {
+        // Modo USB: sin servidor no se puede escribir en la carpeta, así que se descarga config.js
+        try { localStorage.setItem("menu-config", JSON.stringify(datos)); } catch {}
+        exportarJS();
+        modalUSB();
+      }
       guardada = JSON.stringify(cfg); cambio();
-      avisar(SERVIDOR ? "Publicado en todas las pantallas ✓" : "Guardado en este navegador ✓");
     } catch (err) { avisar(err.message, true); }
   }
+  function exportarJS() {
+    const txt = `/* Menú en pantalla — generado el ${new Date().toLocaleString("es-MX")}\n   Copia este archivo a la carpeta del menú (en la USB), reemplazando el config.js anterior. */\n\nwindow.MENU_CONFIG = ${JSON.stringify(cfg, null, 2)};\n`;
+    const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob([txt], { type: "text/javascript" })), download: "config.js" });
+    a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+  function modalUSB() { $("#modalUSB").hidden = false; }
+  $("#cerrarUSB").addEventListener("click", () => $("#modalUSB").hidden = true);
   $("#btnGuardar").addEventListener("click", guardar);
   $("#btnGuardarM").addEventListener("click", guardar);
   $("#btnDescartarM").addEventListener("click", () => { if (confirm("¿Descartar los cambios sin publicar?")) { cfg = JSON.parse(guardada); cambio({ repintar: true, nav: true }); } });
@@ -1023,8 +1071,16 @@
         base = c; info = i;
       } catch { avisar("No se pudo conectar con el servidor", true); }
     }
-    if (!base) { try { base = JSON.parse(localStorage.getItem("menu-config")); } catch {} }
-    cfg = completar(base || window.MENU_CONFIG);
+    if (!base) {
+      // Sin servidor: se usa lo más reciente entre lo guardado en este navegador y el config.js de la carpeta
+      let local = null; try { local = JSON.parse(localStorage.getItem("menu-config")); } catch {}
+      const archivo = window.MENU_CONFIG;
+      base = local && (local.actualizado || 0) > (archivo?.actualizado || 0) ? local : archivo;
+      $("#btnGuardar span").textContent = "Guardar y descargar";
+      $("#btnGuardarM").textContent = "Guardar y descargar";
+      $("#bannerUSB").hidden = false;
+    }
+    cfg = completar(base);
     guardada = JSON.stringify(cfg);
     categoriaFoco = cfg.categorias[0]?.id;
     if (!SECCIONES.some(s => s[0] === seccion)) seccion = "general";
