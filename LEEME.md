@@ -6,6 +6,8 @@
 
 Se abre el menú en pantalla completa en Chrome. Para salir: `Cmd+Q` (Mac) o `Alt+F4` (Windows).
 
+Si el puerto 8090 está ocupado por un menú abierto antes, se cierra solo y arranca el nuevo. Si lo usa otro programa, te pregunta si cerrarlo; si dices que no, usa el siguiente puerto libre (8091, 8092…).
+
 Si la computadora no tiene Node.js, el lanzador avisa y abre el menú en **modo USB**.
 
 ## Modo USB (sin instalar nada)

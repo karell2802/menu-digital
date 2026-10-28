@@ -20,12 +20,12 @@ if not defined NODE (
   goto abrir
 )
 
-start "Menu en pantalla - servidor" /min "%NODE%" server.js
-timeout /t 2 >nul
-set "URL=http://localhost:8090/"
-echo.
-echo   Ajustes: http://localhost:8090/config
-echo   Deja abierta la ventana "Menu en pantalla - servidor".
+title Menu en pantalla - servidor
+REM El servidor se encarga del puerto: si hay un menu viejo lo cierra, si es otro programa pregunta,
+REM y si no, usa el siguiente libre. Despues abre la pantalla en Chrome o Edge.
+echo   Deja abierta esta ventana. Para detener: Ctrl+C
+"%NODE%" server.js --abrir
+exit /b
 
 :abrir
 if defined CHROME (

@@ -3,7 +3,6 @@
 #  · Con Node.js: inicia el servidor (edición desde el celular y cambios en vivo).
 #  · Sin Node.js: avisa y abre el menú en "modo USB", que no necesita instalar nada.
 cd "$(dirname "$0")"
-PUERTO=${PUERTO:-8090}
 CARPETA="$PWD"
 
 # Busca Node: el del sistema, nvm, Homebrew o una copia portátil en la carpeta node/
@@ -28,12 +27,6 @@ if [ -z "$NODE" ]; then
   exit 0
 fi
 
-if ! lsof -i :$PUERTO >/dev/null 2>&1; then
-  "$NODE" server.js &
-  SERVIDOR=$!
-  trap "kill $SERVIDOR 2>/dev/null" EXIT
-  sleep 1
-fi
-abrir "http://localhost:$PUERTO/"
-echo "  Ajustes:  http://localhost:$PUERTO/config"
-wait
+# El servidor se encarga del puerto: si hay un menú viejo lo cierra, si es otro programa pregunta,
+# y si no, usa el siguiente libre. Después abre la pantalla en Chrome.
+exec "$NODE" server.js --abrir

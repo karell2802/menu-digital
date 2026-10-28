@@ -10,8 +10,10 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 const vm = require("vm");
+const { execSync, spawn } = require("child_process");
+const readline = require("readline");
 
-const PUERTO = Number(process.env.PUERTO) || 8090;
+let PUERTO = Number(process.env.PUERTO) || 8090; // puede cambiar si el puerto está ocupado
 const RAIZ = __dirname;
 const DATOS = path.join(RAIZ, "data");
 const SUBIDAS = path.join(RAIZ, "uploads");
@@ -162,7 +164,129 @@ const servidor = http.createServer(async (req, res) => {
   }
 });
 
-servidor.listen(PUERTO, "0.0.0.0", () => {
+/* ---------- Puerto ocupado: cerrar el menú viejo, preguntar o usar otro ---------- */
+const WIN = process.platform === "win32";
+const ABRIR = process.argv.includes("--abrir");
+
+// ¿Quién escucha en ese puerto? Devuelve [{ pid, nombre }]
+function quienUsa(puerto) {
+  try {
+    if (WIN) {
+      const pids = [...new Set(execSync("netstat -ano -p tcp", { encoding: "utf8" }).split(/\r?\n/)
+        .filter(l => /LISTENING/i.test(l) && new RegExp(`:${puerto}\\s`).test(l)).map(l => l.trim().split(/\s+/).pop()))];
+      return pids.filter(p => +p > 0).map(pid => {
+        let nombre = "desconocido";
+        try { nombre = execSync(`tasklist /FI "PID eq ${pid}" /FO CSV /NH`, { encoding: "utf8" }).split(",")[0].replace(/"/g, "").trim() || nombre; } catch {}
+        return { pid: +pid, nombre };
+      });
+    }
+    const pids = execSync(`lsof -nP -t -iTCP:${puerto} -sTCP:LISTEN`, { encoding: "utf8" }).split(/\s+/).filter(Boolean);
+    return [...new Set(pids)].map(pid => {
+      let nombre = "desconocido";
+      try { nombre = execSync(`ps -p ${pid} -o comm=`, { encoding: "utf8" }).trim().split("/").pop() || nombre; } catch {}
+      return { pid: +pid, nombre };
+    });
+  } catch { return []; }
+}
+
+// ¿Es otro servidor de este mismo menú? (responde /api/info)
+function esMenu(puerto) {
+  return new Promise(ok => {
+    const r = http.get({ host: "127.0.0.1", port: puerto, path: "/api/info", timeout: 1500 }, res => {
+      let d = ""; res.on("data", c => d += c);
+      res.on("end", () => { try { ok("puerto" in JSON.parse(d)); } catch { ok(false); } });
+    });
+    r.on("timeout", () => { r.destroy(); ok(false); });
+    r.on("error", () => ok(false));
+  });
+}
+
+function cerrar(procesos) {
+  for (const { pid } of procesos) {
+    if (pid === process.pid) continue;
+    try { WIN ? execSync(`taskkill /PID ${pid} /F`, { stdio: "ignore" }) : process.kill(pid, "SIGTERM"); } catch {}
+  }
+}
+const esperar = ms => new Promise(r => setTimeout(r, ms));
+async function hastaLibre(puerto, intentos = 20) {
+  for (let i = 0; i < intentos; i++) { if (!quienUsa(puerto).length) return true; await esperar(250); }
+  return false;
+}
+
+function preguntar(texto, segundos = 20) {
+  if (!process.stdin.isTTY) return Promise.resolve(false);
+  return new Promise(ok => {
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    const t = setTimeout(() => { rl.close(); console.log("\n   (sin respuesta, uso otro puerto)"); ok(false); }, segundos * 1000);
+    rl.question(texto, r => { clearTimeout(t); rl.close(); ok(/^s/i.test(r.trim())); });
+  });
+}
+
+function puertoLibre(desde) {
+  return new Promise(ok => {
+    const prueba = http.createServer();
+    prueba.once("error", () => ok(puertoLibre(desde + 1)));
+    prueba.listen(desde, "0.0.0.0", () => prueba.close(() => ok(desde)));
+  });
+}
+
+async function liberar(puerto) {
+  const procesos = quienUsa(puerto);
+  const lista = procesos.map(p => `"${p.nombre}" (PID ${p.pid})`).join(", ") || "otro programa";
+
+  if (await esMenu(puerto)) {
+    console.log(`\n   ↻ Ya había un menú abierto en el puerto ${puerto}. Lo cierro y abro este…`);
+    cerrar(procesos);
+    if (!(await hastaLibre(puerto)) && !WIN) {
+      procesos.forEach(p => { try { process.kill(p.pid, "SIGKILL"); } catch {} }); // no quiso cerrar: forzar
+      await hastaLibre(puerto, 8);
+    }
+    return puerto;
+  }
+
+  console.log(`\n   ⚠️  El puerto ${puerto} lo está usando ${lista}.`);
+  if (procesos.length && await preguntar(`   ¿Lo cierro para usar el menú en ese puerto? (s/N): `)) {
+    cerrar(procesos);
+    if (await hastaLibre(puerto)) return puerto;
+    console.log("   No se pudo cerrar.");
+  }
+  const otro = await puertoLibre(puerto + 1);
+  console.log(`   → Uso el puerto ${otro} en su lugar.`);
+  return otro;
+}
+
+function abrirPantalla(url) {
+  const args = ["--kiosk", `--app=${url}`, "--noerrdialogs", "--disable-session-crashed-bubble", "--disable-infobars", "--no-first-run"];
+  try {
+    if (WIN) {
+      const perfil = path.join(process.env.LOCALAPPDATA || os.tmpdir(), "MenuPantalla");
+      const chrome = [process.env.ProgramFiles, process.env["ProgramFiles(x86)"], process.env.LOCALAPPDATA]
+        .filter(Boolean).map(b => path.join(b, "Google", "Chrome", "Application", "chrome.exe")).find(f => fs.existsSync(f));
+      if (chrome) spawn(chrome, [...args, `--user-data-dir=${perfil}`], { detached: true, stdio: "ignore" }).unref();
+      else spawn("cmd", ["/c", "start", "", "msedge", "--kiosk", url, "--edge-kiosk-type=fullscreen", "--no-first-run"], { detached: true, stdio: "ignore" }).unref();
+    } else if (process.platform === "darwin") {
+      const perfil = path.join(os.homedir(), "Library", "Application Support", "MenuPantalla");
+      if (fs.existsSync("/Applications/Google Chrome.app")) spawn("open", ["-na", "Google Chrome", "--args", ...args, `--user-data-dir=${perfil}`], { detached: true, stdio: "ignore" }).unref();
+      else spawn("open", [url], { detached: true, stdio: "ignore" }).unref();
+    } else {
+      spawn("xdg-open", [url], { detached: true, stdio: "ignore" }).unref();
+    }
+  } catch (e) { console.log("   No pude abrir el navegador:", e.message); }
+}
+
+function arrancar() {
+  servidor.once("error", async e => {
+    if (e.code !== "EADDRINUSE") { console.error(e); process.exit(1); }
+    PUERTO = await liberar(PUERTO);
+    arrancar();
+  });
+  servidor.removeAllListeners("listening"); // si el intento anterior falló, su aviso no debe repetirse
+  servidor.listen(PUERTO, "0.0.0.0", alIniciar);
+}
+
+function alIniciar() {
+  servidor.removeAllListeners("error");
+  servidor.on("error", e => console.error(e));
   const red = ips().map(ip => `   Desde otro dispositivo:  http://${ip}:${PUERTO}/config`).join("\n");
   console.log(`
   ┌──────────────────────────────────────────────┐
@@ -174,9 +298,7 @@ ${red}
 
    Deja esta ventana abierta. Ctrl+C para detener.
 `);
-});
-servidor.on("error", e => {
-  if (e.code === "EADDRINUSE") console.error(`\n  El puerto ${PUERTO} ya está ocupado. ¿El menú ya está abierto en otra ventana?\n`);
-  else console.error(e);
-  process.exit(1);
-});
+  if (ABRIR) abrirPantalla(`http://localhost:${PUERTO}/`);
+}
+
+arrancar();
